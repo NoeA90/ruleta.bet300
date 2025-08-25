@@ -206,7 +206,15 @@ function scheduleMidnightReset(){
   const now = new Date();
   const midnight = new Date(now.getFullYear(), now.getMonth(), now.getDate()+1, 0, 0, 5, 0); // 00:00:05
   const ms = midnight.getTime() - now.getTime();
-  setTimeout(()=>{ localStorage.removeItem('spin_done'); localStorage.removeItem('spin_amount'); localStorage.setItem('spin_date', todayKey()); spinBtn.disabled=false; badge.textContent='0%'; title.textContent='Tenés 1 giro disponible'; subtitle.innerHTML='Los bonos se acreditan con tu <b>próxima carga mínima</b>.'; }, ms);
+  setTimeout(()=>{
+    localStorage.removeItem('spin_done');
+    localStorage.removeItem('spin_amount');
+    localStorage.setItem('spin_date', todayKey());
+    spinBtn.disabled=false;
+    badge.textContent='0%';
+    title.textContent='Tenés 1 giro disponible';
+    subtitle.innerHTML='Los bonos se acreditan con tu <b>próxima carga mínima</b>.';
+  }, ms);
 }
 
 /* ===== Canvas responsive ===== */
@@ -242,7 +250,7 @@ function draw(a){
     ctx.fillStyle = COLORS[i%COLORS.length]; ctx.fill();
     ctx.strokeStyle = "rgba(10,15,35,.35)"; ctx.lineWidth = 2; ctx.stroke();
 
-    const label = AMOUNTS[i]+"%";
+    const label = AMOUNTS[i] + "%"; // <- sin toLocaleString
     ctx.save(); ctx.translate(cx,cy); ctx.rotate(s+arc/2);
     ctx.textAlign="right"; ctx.fillStyle="#091024"; ctx.font=labelFont;
     ctx.fillText(label, r-20, 12); ctx.restore();
@@ -323,7 +331,6 @@ function restoreOrResetDaily(){
   const today = todayKey();
   const storedDay = localStorage.getItem('spin_date');
   if(storedDay && storedDay !== today){
-    // nuevo día → limpiamos
     localStorage.removeItem('spin_done');
     localStorage.removeItem('spin_amount');
     localStorage.setItem('spin_date', today);
@@ -334,13 +341,13 @@ function restoreOrResetDaily(){
   const done = localStorage.getItem('spin_done')==='1';
   const saved = parseInt(localStorage.getItem('spin_amount')||'0',10);
   if (done && saved){
-    badge.textContent = saved+"%";
+    badge.textContent = saved + "%";         // <- sin toLocaleString
     title.textContent = "🎉 ¡Premio obtenido!";
-    subtitle.innerHTML = `Recibís un <b>${saved}% extra</b> con tu próxima carga.`;
+    subtitle.innerHTML = `Recibís un <b>${saved}% extra</b> con tu próxima carga.`; // <- sin toLocaleString
     claimBtn.disabled = false;
     spinBtn.disabled = true;
     const WP = (pc==='1'?WP_NUMBERS.pc1:pc==='2'?WP_NUMBERS.pc2:pc==='3'?WP_NUMBERS.pc3:WP_NUMBERS.principal);
-    const msg = WP_MSG.replace("%AMOUNT%", saved);
+    const msg = WP_MSG.replace("%AMOUNT%", String(saved));
     claimBtn.onclick = ()=> location.href = `https://wa.me/${WP}?text=${encodeURIComponent(msg)}`;
   } else {
     spinBtn.disabled = false;
@@ -363,24 +370,24 @@ spinBtn.addEventListener('click', ()=>{
     angle=final;
     const idx=winnerIndexByAngle(angle);
     const win=AMOUNTS[idx];
-    badge.textContent = win+"%";
+
+    badge.textContent = win + "%"; // <- sin toLocaleString
     title.textContent = "🎉 ¡Premio obtenido!";
-    subtitle.innerHTML = `Recibís un <b>${win}% extra</b> con tu próxima carga.`;
+    subtitle.innerHTML = `Recibís un <b>${win}% extra</b> con tu próxima carga.`; // <- sin toLocaleString
     claimBtn.disabled = false;
     const WP = (pc==='1'?WP_NUMBERS.pc1:pc==='2'?WP_NUMBERS.pc2:pc==='3'?WP_NUMBERS.pc3:WP_NUMBERS.principal);
-    const msg = WP_MSG.replace("%AMOUNT%", win);
+    const msg = WP_MSG.replace("%AMOUNT%", String(win));
     claimBtn.onclick = ()=> location.href = `https://wa.me/${WP}?text=${encodeURIComponent(msg)}`;
 
     localStorage.setItem('spin_done','1');
     localStorage.setItem('spin_amount', String(win));
-    localStorage.setItem('spin_date', todayKey()); // guardamos día
+    localStorage.setItem('spin_date', todayKey());
     spinning=false;
   });
 });
 
 /* ===== Init ===== */
 function init(){
-  // plataforma por pc ya seteada arriba
   setSize();
   tick(); const __i=setInterval(()=>{ if(tick()) clearInterval(__i); },1000);
   restoreOrResetDaily();
