@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>BET300</title>
+<title>BET300 · Ruleta</title>
 <meta name="theme-color" content="#0b0f1e"/>
 <style>
 :root{
@@ -93,7 +93,7 @@ h1,h2,h3,p{margin:0 0 8px} h1{font-size:24px} .muted{color:var(--muted)}
         </div>
 
         <div class="row" style="margin-top:8px">
-          <button id="spinBtn" class="btn">🎯 Girar</button>
+          <button id="spinBtn" class="btn">🎯 Girar ruleta</button>
         </div>
 
         <button id="claimBtn" class="btn ok" style="margin-top:10px" disabled>📲 Reclamar por WhatsApp</button>
@@ -115,18 +115,28 @@ h1,h2,h3,p{margin:0 0 8px} h1{font-size:24px} .muted{color:var(--muted)}
 </div>
 
 <script>
-/* ===== Datos de premios MIXTOS ($ y %) ===== */
-const PRIZES = [
-  {type:'money', value:2000},
-  {type:'money', value:3000},
-  {type:'money', value:4000},
-  {type:'money', value:6000},
-  {type:'percent', value:15},
-  {type:'percent', value:25},
-  {type:'percent', value:35},
-  {type:'percent', value:50},
+/* ===== Config de premios ===== */
+// montos: 2k–10k; porcentajes: 10–50
+const MONEY_VALUES   = [2000,3000,4000,5000,6000,7000,8000,9000,10000];
+const PERCENT_VALUES = [10,20,30,40,50];
+
+// intercalar $ y %, empezando por $
+const PRIZES = (() => {
+  const res = [];
+  const max = Math.max(MONEY_VALUES.length, PERCENT_VALUES.length);
+  for (let i=0;i<max;i++){
+    if (i < MONEY_VALUES.length)   res.push({type:'money', value:MONEY_VALUES[i]});
+    if (i < PERCENT_VALUES.length) res.push({type:'percent', value:PERCENT_VALUES[i]});
+  }
+  // esto produce 14 segmentos ($/% alternados, y al final sobran $$)
+  return res;
+})();
+
+// paleta (cicla si faltan)
+const COLORS = [
+  "#44e0ff","#7a5bff","#16e2b6","#ff6ad5","#ffd166","#4be1a0","#8ab6ff",
+  "#ff9bd1","#6ee7ff","#a78bfa","#34d39a","#ffa3e0","#ffe08a","#7ce1b9"
 ];
-const COLORS = ["#44e0ff","#7a5bff","#16e2b6","#ff6ad5","#ffd166","#4be1a0","#8ab6ff","#ff9bd1"];
 
 /* WhatsApp y plataforma por PC */
 const WP_NUMBERS = { principal:"5491157737173", pc1:"5491138601132", pc2:"5491138214312", pc3:"5491168392647" };
@@ -150,15 +160,15 @@ document.getElementById('playNow').href = PLATFORM;
 /* Estado */
 let angle=0, spinning=false, cx,cy,r, cssW=0;
 
-/* ===== Utilidades ===== */
-const money = n => "$"+n.toLocaleString("es-AR"); // SOLO para $; % se muestra plano
-function prizeLabel(p){ return p.type==='money' ? money(p.value) : (p.value+"%"); }
-function prizeSubtitle(p){
+/* ===== Utils ===== */
+const money = n => "$"+n.toLocaleString("es-AR");
+function label(p){ return p.type==='money' ? money(p.value) : (p.value+"%"); }
+function subtitleHTML(p){
   return p.type==='money'
     ? `Recibís <b>${money(p.value)} extra</b> con tu próxima carga.`
     : `Recibís un <b>${p.value}% extra</b> con tu próxima carga.`;
 }
-function prizeWpText(p){
+function whatsappText(p){
   return p.type==='money'
     ? `Hola, gané ${money(p.value)} en la ruleta y quiero reclamarlo con mi próxima carga.`
     : `Hola, gané un ${p.value}% de bono en la ruleta y quiero reclamarlo con mi próxima carga.`;
@@ -180,16 +190,16 @@ function setSize(){
 }
 addEventListener('resize', ()=>{ clearTimeout(window.__wTo); window.__wTo=setTimeout(setSize,120) });
 
-/* ===== Dibujo de la ruleta ===== */
+/* ===== Dibujo ===== */
 function draw(a){
   ctx.clearRect(0,0,wheel.width,wheel.height);
   const n = PRIZES.length, arc = Math.PI*2/n;
 
-  const labelFont =
-    cssW <= 340 ? "700 22px system-ui,-apple-system,Segoe UI" :
-    cssW <= 380 ? "700 26px system-ui,-apple-system,Segoe UI" :
-    cssW <= 440 ? "700 30px system-ui,-apple-system,Segoe UI" :
-                  "700 36px system-ui,-apple-system,Segoe UI";
+  const font =
+    cssW <= 340 ? "700 20px system-ui,-apple-system,Segoe UI" :
+    cssW <= 380 ? "700 24px system-ui,-apple-system,Segoe UI" :
+    cssW <= 440 ? "700 28px system-ui,-apple-system,Segoe UI" :
+                  "700 32px system-ui,-apple-system,Segoe UI";
 
   for(let i=0;i<n;i++){
     const s=a+i*arc, e=s+arc;
@@ -197,21 +207,20 @@ function draw(a){
     ctx.fillStyle = COLORS[i%COLORS.length]; ctx.fill();
     ctx.strokeStyle="rgba(10,15,35,.35)"; ctx.lineWidth=2; ctx.stroke();
 
-    const label = prizeLabel(PRIZES[i]);
+    const txt = label(PRIZES[i]);
     ctx.save(); ctx.translate(cx,cy); ctx.rotate(s+arc/2);
-    ctx.textAlign="right"; ctx.fillStyle="#091024"; ctx.font=labelFont;
-    ctx.fillText(label, r-20, 12); ctx.restore();
+    ctx.textAlign="right"; ctx.fillStyle="#091024"; ctx.font=font;
+    ctx.fillText(txt, r-18, 10); ctx.restore();
   }
 
   // centro
   const rCenter = cssW <= 360 ? Math.max(26, r * 0.085) : cssW <= 420 ? Math.max(30, r * 0.095) : Math.max(34, r * 0.105);
-  const centerStroke = Math.max(2, Math.round(rCenter * 0.08));
   ctx.beginPath(); ctx.arc(cx,cy,rCenter,0,Math.PI*2);
   ctx.fillStyle="#0e1230"; ctx.fill();
-  ctx.strokeStyle="rgba(124,77,255,.6)"; ctx.lineWidth=centerStroke; ctx.stroke();
+  ctx.strokeStyle="rgba(124,77,255,.6)"; ctx.lineWidth=Math.max(2, rCenter*0.08); ctx.stroke();
 }
 
-/* ===== Premio por posición (bajo el puntero) ===== */
+/* ===== Ganador por posición (puntero arriba) ===== */
 function normAngle(rad){ const T=Math.PI*2; return ((rad%T)+T)%T; }
 function winnerIndexByAngle(a){
   const n=PRIZES.length, arc=Math.PI*2/n, pointer=Math.PI*1.5;
@@ -253,12 +262,12 @@ function restorePrizeIfAny(){
   const saved = localStorage.getItem('spin_prize');
   if(done && saved){
     const p = JSON.parse(saved);
-    badge.textContent = prizeLabel(p);
+    badge.textContent = label(p);
     title.textContent = "🎉 ¡Premio obtenido!";
-    subtitle.innerHTML = prizeSubtitle(p);
+    subtitle.innerHTML = subtitleHTML(p);
     claimBtn.disabled = false;
     spinBtn.disabled = true;
-    const msg = prizeWpText(p);
+    const msg = whatsappText(p);
     claimBtn.onclick = ()=> location.href = `https://wa.me/${WP}?text=${encodeURIComponent(msg)}`;
   }
 }
@@ -311,12 +320,12 @@ spinBtn.addEventListener('click', ()=>{
     const idx = winnerIndexByAngle(angle);
     const prize = PRIZES[idx];
 
-    badge.textContent = prizeLabel(prize);
+    badge.textContent = label(prize);
     title.textContent = "🎉 ¡Premio obtenido!";
-    subtitle.innerHTML = prizeSubtitle(prize);
+    subtitle.innerHTML = subtitleHTML(prize);
     claimBtn.disabled = false;
 
-    const msg = prizeWpText(prize);
+    const msg = whatsappText(prize);
     claimBtn.onclick = ()=> location.href = `https://wa.me/${WP}?text=${encodeURIComponent(msg)}`;
 
     localStorage.setItem('spin_done','1');
