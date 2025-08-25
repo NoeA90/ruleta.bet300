@@ -1,0 +1,18 @@
+<svg width="240" height="80" viewBox="0 0 240 80" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="g" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#64D1FF"/>
+      <stop offset="50%" stop-color="#7C56FF"/>
+      <stop offset="100%" stop-color="#ff7cf7"/>
+    </linearGradient>
+    <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="3.5" result="coloredBlur"/>
+      <feMerge>
+        <feMergeNode in="coloredBlur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+  <rect x="0" y="0" width="240" height="80" fill="none"/>
+  <text x="12" y="52" font-family="Montserrat, Poppins, Arial" font-weight="800" font-size="42" fill="url(#g)" filter="url(#glow)">BET300</text>
+</svg>
