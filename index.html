@@ -27,7 +27,7 @@ body::before{
   border:1px solid var(--border);border-radius:18px;padding:18px;box-shadow:0 15px 40px rgba(0,0,0,.35)
 }
 @media (max-width:520px){
-  .container{padding:0}             /* sin márgenes en mobile */
+  .container{padding:0}
   .card{border-radius:0;border-left:0;border-right:0;padding:14px}
 }
 
@@ -194,7 +194,7 @@ function getWrapWidth(){
 function setSize(){
   const dpr = window.devicePixelRatio || 1;
   const w = Math.min(520, Math.max(280, getWrapWidth()));
-  cssW = w; // ancho CSS actual
+  cssW = w;
   wheel.width  = Math.floor(w * dpr);
   wheel.height = Math.floor(w * dpr);
   wheel.style.width  = w + 'px';
@@ -244,40 +244,64 @@ function draw(a){
   ctx.stroke();
 }
 
-/* Mapear monto -> ángulo (puntero fijo arriba) */
-function targetAngleFor(amount){
-  const idx = AMOUNTS.indexOf(amount);
-  const arc = Math.PI*2/AMOUNTS.length;
-  const base = (Math.PI*1.5) - (arc/2); // top
-  return base - idx*arc;
+/* ===== Premio por posición final (bajo el puntero) ===== */
+function normAngle(rad){
+  const TWO_PI = Math.PI*2;
+  return ((rad % TWO_PI) + TWO_PI) % TWO_PI; // [0, 2π)
+}
+/* índice del segmento cuyo centro quedó bajo el puntero superior */
+function winnerIndexByAngle(a){
+  const n   = AMOUNTS.length;
+  const arc = Math.PI*2 / n;
+  const pointer = Math.PI * 1.5; // top
+
+  let bestIdx = 0;
+  let bestDist = Infinity;
+
+  for(let i=0;i<n;i++){
+    const center = normAngle(a + i*arc + arc/2);
+    let diff = Math.abs(normAngle(center - pointer));
+    if (diff > Math.PI) diff = (Math.PI*2) - diff;
+    if (diff < bestDist){ bestDist = diff; bestIdx = i; }
+  }
+  return bestIdx;
 }
 
-/* Spin */
+/* Animación */
+function animateTo(target, ms, cb){
+  const start = performance.now(); const from = angle;
+  (function loop(t){
+    const k = Math.min(1,(t-start)/ms);
+    const ease = 1 - Math.pow(1-k,3);
+    angle = from + (target-from)*ease; draw(angle);
+    if(k<1) requestAnimationFrame(loop); else cb&&cb();
+  })(start);
+}
+
+/* Spin: resultado por posición (no pre-selecciona premio) */
 spinBtn.addEventListener('click', ()=>{
   if(spinning) return;
   if(localStorage.getItem('spin_done')==='1'){ showToast("Ya usaste tu giro de hoy"); return; }
 
-  spinning = true; spinBtn.disabled = true;
-  const win = AMOUNTS[Math.floor(Math.random()*AMOUNTS.length)];
-  prize = win;
-  const final = targetAngleFor(win) + Math.PI*2*(5 + Math.random()*1.5);
+  spinning = true;
+  spinBtn.disabled = true;
+
+  const extraTurns   = 5 + Math.random()*1.5;         // 5 a 6.5 vueltas
+  const randomOffset = Math.random() * Math.PI * 2;   // 0–360°
+  const final        = angle + (Math.PI*2*extraTurns) + randomOffset;
+
   animateTo(final, 3000, ()=>{
+    angle = final; // fijamos el ángulo final real
+    const idx = winnerIndexByAngle(angle);
+    const win = AMOUNTS[idx];
+    prize = win;
+
     setWon(win);
     localStorage.setItem('spin_done','1');
     localStorage.setItem('spin_amount', String(win));
     spinning = false;
   });
 });
-
-/* Animación */
-function animateTo(target, ms, cb){
-  const start = performance.now(); const from = angle;
-  (function loop(t){
-    const k = Math.min(1,(t-start)/ms); const ease = 1 - Math.pow(1-k,3);
-    angle = from + (target-from)*ease; draw(angle);
-    if(k<1) requestAnimationFrame(loop); else cb&&cb();
-  })(start);
-}
 
 /* Estado ganado */
 function setWon(amount){
