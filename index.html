@@ -117,6 +117,7 @@ const MONEY_VALUES=[2000,3000,4000,5000,6000,7000,8000,9000,10000];
 const PERCENT_VALUES=[10,20,30,40,50];
 const PRIZES=(()=>{const res=[];const max=Math.max(MONEY_VALUES.length,PERCENT_VALUES.length);for(let i=0;i<max;i++){if(i<MONEY_VALUES.length)res.push({type:'money',value:MONEY_VALUES[i]});if(i<PERCENT_VALUES.length)res.push({type:'percent',value:PERCENT_VALUES[i]});}return res;})();
 const COLORS=["#44e0ff","#7a5bff","#16e2b6","#ff6ad5","#ffd166","#4be1a0","#8ab6ff","#ff9bd1","#6ee7ff","#a78bfa","#34d39a","#ffa3e0","#ffe08a","#7ce1b9"];
+
 const WP_NUMBERS={principal:"5491157737173",pc1:"5491138601132",pc2:"5491138214312",pc3:"5491168392647"};
 const PLATFORM_LINKS={principal:"https://plataforma.example/inicio",pc1:"https://c01.bet300vip.com/",pc2:"https://c02.bet300vip.com/",pc3:"https://c03.bet300vip.com/"};
 
@@ -157,4 +158,17 @@ function restorePrizeIfAny(){const done=localStorage.getItem('spin_done')==='1';
 function scheduleMidnightReset(){const now=new Date();const midnight=new Date(now.getFullYear(),now.getMonth(),now.getDate()+1,0,0,5,0);setTimeout(()=>{localStorage.removeItem('spin_done');localStorage.removeItem('spin_prize');localStorage.setItem('spin_date',todayKey());spinBtn.disabled=false;badge.textContent='-';title.textContent='Tenés 1 intento disponible';subtitle.innerHTML='Los beneficios se aplican al <b>completar el siguiente paso</b> en la plataforma.';},midnight.getTime()-now.getTime());}
 
 function endOfDay(){const n=new Date();const end=new Date(n.getFullYear(),n.getMonth(),n.getDate(),23,59,0,0).getTime();return end>Date.now()?end:new Date(n.getFullYear(),n.getMonth(),n.getDate()+1,23,59,0,0).getTime();}
-function tickCountdown(){const ms=endOfDay()-Date.now();const total=Math.max(0,Math.floor(ms/1000));const h=Math.floor(total/3600),m=Math.floor((total%3600)/60),s=total%60;countdownEl.textContent=h>0?`${h}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`:`${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;if(ms<=0){promoBox.classList.add('expired');spinBtn.disabled
+function tickCountdown(){const ms=endOfDay()-Date.now();const total=Math.max(0,Math.floor(ms/1000));const h=Math.floor(total/3600),m=Math.floor((total%3600)/60),s=total%60;countdownEl.textContent=h>0?`${h}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`:`${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;if(ms<=0){promoBox.classList.add('expired');spinBtn.disabled=true;title.textContent="⏱️ Disponibilidad finalizada";subtitle.innerHTML="La dinámica vuelve a habilitarse pronto.";return true;}return false;}
+
+spinBtn.addEventListener('click',()=>{if(spinning)return;if(localStorage.getItem('spin_done')==='1'){alert("Ya usaste tu intento de hoy");return;}
+spinning=true;spinBtn.disabled=true;const extra=5+Math.random()*1.5,offset=Math.random()*Math.PI*2,final=angle+(Math.PI*2*extra)+offset;
+animateTo(final,3000,()=>{angle=final;const idx=winnerIndexByAngle(angle);const prize=PRIZES[idx];
+badge.textContent=label(prize);title.textContent="🎉 ¡Beneficio obtenido!";subtitle.innerHTML=subtitleHTML(prize);claimBtn.disabled=false;
+const msg=whatsappText(prize);claimBtn.onclick=()=>location.href=`https://wa.me/${WP}?text=${encodeURIComponent(msg)}`;
+localStorage.setItem('spin_done','1');localStorage.setItem('spin_prize',JSON.stringify(prize));localStorage.setItem('spin_date',todayKey());spinning=false;});});
+
+function init(){setSize();restoreDaily();restorePrizeIfAny();tickCountdown();const iv=setInterval(()=>{if(tickCountdown())clearInterval(iv);},1000);scheduleMidnightReset();}
+init();
+</script>
+</body>
+</html>
