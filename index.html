@@ -259,16 +259,18 @@ h1{font-size:24px}
 
 <script>
 /* ========= CONFIG PREMIOS ========= */
+/* ===== Premios (intercalados) ===== */
 const PRIZES = [
-  { type: 'money',   value: 2000 },
-  { type: 'money',   value: 3000 },
-  { type: 'money',   value: 5000 },
-  { type: 'retry' },              // otra chance
-  { type: 'double' },             // doble carga
-  { type: 'percent', value: 10 },
-  { type: 'percent', value: 20 },
-  { type: 'percent', value: 30 }
+  { type: 'money',   value: 2000 },   // $2.000
+  { type: 'percent', value: 10 },     // 10%
+  { type: 'money',   value: 3000 },   // $3.000
+  { type: 'retry'  },                 // OTRA CHANCE
+  { type: 'money',   value: 5000 },   // $5.000
+  { type: 'percent', value: 20 },     // 20%
+  { type: 'double' },                 // DOBLE CARGA
+  { type: 'percent', value: 30 },     // 30%
 ];
+
 
 const COLORS = [
   "#44e0ff","#7a5bff","#16e2b6","#ff6ad5",
