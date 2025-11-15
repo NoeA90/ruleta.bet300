@@ -151,15 +151,44 @@ const PRIZES = (()=>{const r=[];const m=Math.max(MONEY_VALUES.length,PERCENT_VAL
     if(i<PERCENT_VALUES.length)r.push({type:'percent',value:PERCENT_VALUES[i]}); } return r; })();
 const COLORS=["#44e0ff","#7a5bff","#16e2b6","#ff6ad5","#ffd166","#4be1a0","#8ab6ff","#ff9bd1","#6ee7ff","#a78bfa","#34d39a","#ffa3e0","#ffe08a","#7ce1b9"];
 
-/* WhatsApp / plataforma por pc */
-const WP_NUMBERS={principal:"54911",pc1:"5491171559478",pc2:"5491151622581",pc3:"5491154040255"};
-const PLATFORM_LINKS={principal:"https://plataforma.example/inicio",pc1:"https://300vip-c01.vercel.app/",pc2:"https://300vip-c02.vercel.app/",pc3:"https://300vip-c03.vercel.app/"};
-const params=new URLSearchParams(location.search);const pc=params.get('pc');
-let WP=WP_NUMBERS.principal, PLATFORM=PLATFORM_LINKS.principal;
-if(pc==='1'){WP=WP_NUMBERS.pc1;PLATFORM=PLATFORM_LINKS.pc1}
-if(pc==='2'){WP=WP_NUMBERS.pc2;PLATFORM=PLATFORM_LINKS.pc2}
-if(pc==='3'){WP=WP_NUMBERS.pc3;PLATFORM=PLATFORM_LINKS.pc3}
-document.getElementById('playNow').href=PLATFORM;
+/* ===== WhatsApp / plataforma por pc (4 parámetros) ===== */
+const WP_NUMBERS = {
+  principal: "54911",              // si querés, después reemplazamos por el que uses de base
+  pc1: "5491171559478",
+  pc2: "5491151622581",
+  pc3: "5491154040255",
+  pc4: "5491150030414"             // ← NUEVO
+};
+
+const PLATFORM_LINKS = {
+  principal: "https://plataforma.example/inicio",
+  pc1: "https://300vip-c01.vercel.app/",
+  pc2: "https://300vip-c02.vercel.app/",
+  pc3: "https://300vip-c03.vercel.app/",
+  pc4: "https://bet300.site"       // ← NUEVO
+};
+
+const params = new URLSearchParams(location.search);
+const pc = params.get('pc');
+
+let WP = WP_NUMBERS.principal;
+let PLATFORM = PLATFORM_LINKS.principal;
+
+if (pc === '1') {
+  WP = WP_NUMBERS.pc1;
+  PLATFORM = PLATFORM_LINKS.pc1;
+} else if (pc === '2') {
+  WP = WP_NUMBERS.pc2;
+  PLATFORM = PLATFORM_LINKS.pc2;
+} else if (pc === '3') {
+  WP = WP_NUMBERS.pc3;
+  PLATFORM = PLATFORM_LINKS.pc3;
+} else if (pc === '4') {
+  WP = WP_NUMBERS.pc4;
+  PLATFORM = PLATFORM_LINKS.pc4;
+}
+
+document.getElementById('playNow').href = PLATFORM;
 
 /* ===== Antifraude: device id + código + timestamp visibles ===== */
 const SALT = "bet300-ruleta-v1"; // podés rotarlo periódicamente
