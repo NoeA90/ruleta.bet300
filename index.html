@@ -253,7 +253,7 @@ h1{font-size:24px}
 </div>
 
 <script>
-/* ===== Premios mejorados ===== */
+/* ===== Premios ===== */
 const PRIZES = [
   { type: 'money',   value: 2000 },
   { type: 'money',   value: 3000 },
@@ -272,7 +272,7 @@ const COLORS=[
   "#ffe08a","#7ce1b9"
 ];
 
-/* ===== WhatsApp / plataforma por pc (4 parámetros) ===== */
+/* ===== WhatsApp / plataforma por pc ===== */
 const WP_NUMBERS = {
   principal: "54911",
   pc1: "5491171559478",
@@ -307,7 +307,7 @@ if (pc === '1') {
 
 document.getElementById('playNow').href = PLATFORM;
 
-/* ===== Antifraude: device id + código + timestamp visibles ===== */
+/* ===== Antifraude básico ===== */
 const SALT = "bet300-ruleta-v1";
 function ensureDeviceId(){
   let id = localStorage.getItem('device_id');
@@ -342,7 +342,7 @@ async function makeClaimCode(prizeLabel){
   return hex.slice(0,10).toUpperCase();
 }
 
-/* ===== Audio (ticks + win) ===== */
+/* ===== Audio ===== */
 let soundOn=true;
 const soundToggle=document.getElementById('soundToggle');
 const soundState=document.getElementById('soundState');
@@ -377,7 +377,7 @@ let angle=0, spinning=false, cx,cy,r, cssW=0;
 
 const money = n => "$" + n.toLocaleString("es-AR");
 
-// Texto sobre la ruleta
+// Label corto para cada premio
 const label = p => {
   switch (p.type) {
     case 'money':   return money(p.value);
@@ -419,20 +419,27 @@ function setSize(){
   wheel.style.width=w+'px'; wheel.style.height=w+'px'; ctx.setTransform(dpr,0,0,dpr,0,0);
   cx=wheel.width/dpr/2; cy=wheel.height/dpr/2; r=Math.min(cx,cy)-10;
 }
+addEventListener('resize',()=>{clearTimeout(window.__wTo);window.__wTo=setTimeout(()=>{setSize()},120)})
 
-/* ===== Dibujo de la ruleta (texto bien orientado) ===== */
+/* Devuelve líneas de texto por premio (para que DOBLE CARGA/OTRA CHANCE sean 2 líneas) */
+function prizeLines(p){
+  if(p.type === 'double') return ['DOBLE','CARGA'];
+  if(p.type === 'retry')  return ['OTRA','CHANCE'];
+  return [label(p)];
+}
+
+/* ===== Dibujo de la ruleta ===== */
 function draw(a){
-  if (!cx || !cy || !r) return; // seguridad por las dudas
-
   ctx.clearRect(0,0,wheel.width,wheel.height);
   const n = PRIZES.length;
   const arc = Math.PI*2/n;
 
-  const font =
-    cssW <= 320 ? "700 18px Montserrat" :
-    cssW <= 380 ? "700 20px Montserrat" :
-    cssW <= 440 ? "700 22px Montserrat" :
-                  "700 24px Montserrat";
+  const fontSize =
+    cssW <= 320 ? 16 :
+    cssW <= 380 ? 18 :
+    cssW <= 440 ? 20 : 22;
+
+  const font = `800 ${fontSize}px Montserrat,system-ui,-apple-system,Segoe UI`;
 
   for(let i=0;i<n;i++){
     const start = a + i*arc;
@@ -441,12 +448,12 @@ function draw(a){
 
     let fillColor = COLORS[i % COLORS.length];
     if (PRIZES[i].type === 'double') {
-      fillColor = "#FACC15"; // dorado
+      fillColor = "#FACC15";
     } else if (PRIZES[i].type === 'retry') {
-      fillColor = "#22d3ee"; // celeste
+      fillColor = "#22d3ee";
     }
 
-    // sector
+    // porción
     ctx.beginPath();
     ctx.moveTo(cx,cy);
     ctx.arc(cx,cy,r,start,end);
@@ -458,20 +465,28 @@ function draw(a){
     ctx.stroke();
 
     // texto
-    const txt = label(PRIZES[i]);
+    const lines = prizeLines(PRIZES[i]);
     ctx.save();
     ctx.translate(cx,cy);
     ctx.rotate(mid);
 
-    const flip = mid > Math.PI/2 && mid < 3*Math.PI/2;
+    const midNorm = ((mid % (Math.PI*2)) + Math.PI*2) % (Math.PI*2);
+    const flip = midNorm > Math.PI/2 && midNorm < 3*Math.PI/2;
     if (flip) ctx.rotate(Math.PI);
 
     ctx.font = font;
     ctx.fillStyle = "#091024";
     ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
 
-    const textRadius = r * 0.72;
-    ctx.fillText(txt, textRadius, 8);
+    const textRadius = r * 0.70;
+    const lineHeight = fontSize + 2;
+    const totalHeight = lineHeight * (lines.length - 1);
+
+    lines.forEach((line,idx)=>{
+      const y = -totalHeight/2 + idx*lineHeight;
+      ctx.fillText(line, textRadius, y);
+    });
 
     ctx.restore();
   }
@@ -496,7 +511,7 @@ function draw(a){
     ctx.fill();
   }
 
-  // centro glow
+  // centro con glow
   const rCenter =
     cssW<=360 ? Math.max(26,r*.085) :
     cssW<=420 ? Math.max(30,r*.095) :
@@ -514,6 +529,9 @@ function draw(a){
   ctx.lineWidth=Math.max(2,rCenter*.08);
   ctx.stroke();
 }
+
+// idle
+(function glow(){ draw(angle); requestAnimationFrame(glow); })();
 
 /* Ganador exacto por sector */
 function normAngle(rad){ const T = Math.PI * 2; return ((rad % T) + T) % T; }
@@ -650,7 +668,7 @@ spinBtn.addEventListener('click', async ()=>{
       claimBtn.onclick = null;
 
       spinning = false;
-      spinBtn.disabled = false; // habilita de nuevo GIRAR
+      spinBtn.disabled = false;
       return;
     }
 
@@ -690,12 +708,6 @@ function init(){
   tickCountdown();
   setInterval(tickCountdown,1000);
   scheduleMidnightReset();
-
-  // animación continua de la ruleta (solo dibuja, no gira)
-  (function glow(){
-    draw(angle);
-    requestAnimationFrame(glow);
-  })();
 }
 init();
 </script>
