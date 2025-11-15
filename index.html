@@ -103,8 +103,8 @@ h1,h2,h3,p{margin:0 0 8px} h1{font-size:24px} .muted{color:var(--muted)}
 <div class="container">
   <div class="card">
     <div class="head">
-      <!-- Solo logo -->
-      <img class="brand" src="img/logo-bet300.svg" alt="BET300">
+      <!-- Logo directamente en la raíz del proyecto -->
+      <img class="brand" src="logo-bet300.svg" alt="BET300">
       <span class="pill time">⚡ Tiempo limitado <span class="count" id="countdown">--:--</span></span>
       <span class="pill sound" id="soundToggle">🔊 Sonido: <b id="soundState">ON</b></span>
     </div>
@@ -157,21 +157,12 @@ h1,h2,h3,p{margin:0 0 8px} h1{font-size:24px} .muted{color:var(--muted)}
 
 <script>
 /* ===== Premios mejorados ===== */
-/*
-  Opciones:
-  - $2.000
-  - $3.000
-  - $5.000
-  - Otra chance (2do tiro)
-  - Doble de tu carga
-  - 10%, 20%, 30%
-*/
 const PRIZES = [
   { type: 'money',   value: 2000 },
   { type: 'money',   value: 3000 },
   { type: 'money',   value: 5000 },
-  { type: 'retry' },              // otra chance (segundo giro)
-  { type: 'double' },             // doble de tu carga
+  { type: 'retry' },              // otra chance
+  { type: 'double' },             // doble carga
   { type: 'percent', value: 10 },
   { type: 'percent', value: 20 },
   { type: 'percent', value: 30 },
@@ -186,11 +177,11 @@ const COLORS=[
 
 /* ===== WhatsApp / plataforma por pc (4 parámetros) ===== */
 const WP_NUMBERS = {
-  principal: "54911",              // base, si querés lo cambiamos
+  principal: "54911",
   pc1: "5491171559478",
   pc2: "5491151622581",
   pc3: "5491154040255",
-  pc4: "5491150030414"             // nuevo
+  pc4: "5491150030414"
 };
 
 const PLATFORM_LINKS = {
@@ -208,17 +199,13 @@ let WP = WP_NUMBERS.principal;
 let PLATFORM = PLATFORM_LINKS.principal;
 
 if (pc === '1') {
-  WP = WP_NUMBERS.pc1;
-  PLATFORM = PLATFORM_LINKS.pc1;
+  WP = WP_NUMBERS.pc1; PLATFORM = PLATFORM_LINKS.pc1;
 } else if (pc === '2') {
-  WP = WP_NUMBERS.pc2;
-  PLATFORM = PLATFORM_LINKS.pc2;
+  WP = WP_NUMBERS.pc2; PLATFORM = PLATFORM_LINKS.pc2;
 } else if (pc === '3') {
-  WP = WP_NUMBERS.pc3;
-  PLATFORM = PLATFORM_LINKS.pc3;
+  WP = WP_NUMBERS.pc3; PLATFORM = PLATFORM_LINKS.pc3;
 } else if (pc === '4') {
-  WP = WP_NUMBERS.pc4;
-  PLATFORM = PLATFORM_LINKS.pc4;
+  WP = WP_NUMBERS.pc4; PLATFORM = PLATFORM_LINKS.pc4;
 }
 
 document.getElementById('playNow').href = PLATFORM;
@@ -249,7 +236,7 @@ function tsString(d=new Date()){
 async function sha256hex(msg){
   const enc = new TextEncoder().encode(msg);
   const buf = await crypto.subtle.digest("SHA-256", enc);
-  return Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,"0")).join("");
+  return Array.from(new Uint8Array(buf)).map(b=>b.toString(16,"0")).join("");
 }
 async function makeClaimCode(prizeLabel){
   const base = `${DEVICE_ID}|${todayKey()}|${prizeLabel}|pc:${pc||'0'}|${SALT}`;
@@ -292,26 +279,28 @@ let angle=0, spinning=false, cx,cy,r, cssW=0;
 
 const money = n => "$" + n.toLocaleString("es-AR");
 
+// Texto sobre la ruleta
 const label = p => {
   switch (p.type) {
     case 'money':   return money(p.value);
     case 'percent': return `${p.value}%`;
-    case 'retry':   return 'Otra chance';
-    case 'double':  return 'Doble de tu carga';
+    case 'retry':   return 'OTRA CHANCE';
+    case 'double':  return 'DOBLE CARGA';
     default:        return '';
   }
 };
 
+// Texto explicativo en el panel
 const subtitleHTML = p => {
   switch (p.type) {
     case 'money':
-      return `Recibís <b>${money(p.value)} extra</b> con tu próxima carga.`;
+      return `Ganaste <b>${money(p.value)}</b> extra para tu próxima carga mínima.`;
     case 'percent':
-      return `Recibís un <b>${p.value}% extra</b> con tu próxima carga.`;
+      return `Ganaste un <b>${p.value}% extra</b> sobre el monto de tu próxima carga.`;
     case 'double':
-      return `Recibís el <b>doble de tu próxima carga</b> dentro del límite acordado con el operador.`;
+      return `Ganaste <b>doble de tu próxima carga</b> (hasta el límite acordado con el operador).`;
     case 'retry':
-      return `Tenés <b>otro giro habilitado</b>, aprovechalo ahora mismo.`;
+      return `Te tocó <b>otra chance</b>, girá de nuevo ahora mismo.`;
     default:
       return '';
   }
@@ -342,9 +331,20 @@ function draw(a){
                cssW<=440?"700 28px system-ui,-apple-system,Segoe UI":"700 32px system-ui,-apple-system,Segoe UI";
   for(let i=0;i<n;i++){
     const s=a+i*arc, e=s+arc;
+
+    // color base
+    let fillColor = COLORS[i%COLORS.length];
+    // resaltar DOBLE CARGA (dorado) y OTRA CHANCE (celeste)
+    if (PRIZES[i].type === 'double') {
+      fillColor = "#FACC15"; // dorado fuerte
+    } else if (PRIZES[i].type === 'retry') {
+      fillColor = "#22d3ee"; // celeste neón
+    }
+
     ctx.beginPath();ctx.moveTo(cx,cy);ctx.arc(cx,cy,r,s,e);ctx.closePath();
-    ctx.fillStyle=COLORS[i%COLORS.length];ctx.fill();
+    ctx.fillStyle=fillColor;ctx.fill();
     ctx.strokeStyle="rgba(10,15,35,.35)";ctx.lineWidth=2;ctx.stroke();
+
     const txt=label(PRIZES[i]);
     ctx.save();ctx.translate(cx,cy);ctx.rotate(s+arc/2);
     ctx.textAlign="right";ctx.fillStyle="#091024";ctx.font=font;
@@ -506,7 +506,7 @@ spinBtn.addEventListener('click', async ()=>{
       return;
     }
 
-    // Premios "reales": money, percent, double
+    // Premios reales
     const code = await makeClaimCode(prizeLabel);
     const ts   = tsString(new Date());
     localStorage.setItem('spin_code', code);
