@@ -419,19 +419,20 @@ function setSize(){
   wheel.style.width=w+'px'; wheel.style.height=w+'px'; ctx.setTransform(dpr,0,0,dpr,0,0);
   cx=wheel.width/dpr/2; cy=wheel.height/dpr/2; r=Math.min(cx,cy)-10;
 }
-addEventListener('resize',()=>{clearTimeout(window.__wTo);window.__wTo=setTimeout(()=>{setSize()},120)})
 
 /* ===== Dibujo de la ruleta (texto bien orientado) ===== */
 function draw(a){
+  if (!cx || !cy || !r) return; // seguridad por las dudas
+
   ctx.clearRect(0,0,wheel.width,wheel.height);
   const n = PRIZES.length;
   const arc = Math.PI*2/n;
 
   const font =
-    cssW <= 320 ? "700 18px Montserrat,system-ui,-apple-system,Segoe UI" :
-    cssW <= 380 ? "700 20px Montserrat,system-ui,-apple-system,Segoe UI" :
-    cssW <= 440 ? "700 22px Montserrat,system-ui,-apple-system,Segoe UI" :
-                  "700 24px Montserrat,system-ui,-apple-system,Segoe UI";
+    cssW <= 320 ? "700 18px Montserrat" :
+    cssW <= 380 ? "700 20px Montserrat" :
+    cssW <= 440 ? "700 22px Montserrat" :
+                  "700 24px Montserrat";
 
   for(let i=0;i<n;i++){
     const start = a + i*arc;
@@ -445,7 +446,7 @@ function draw(a){
       fillColor = "#22d3ee"; // celeste
     }
 
-    // porción
+    // sector
     ctx.beginPath();
     ctx.moveTo(cx,cy);
     ctx.arc(cx,cy,r,start,end);
@@ -463,7 +464,7 @@ function draw(a){
     ctx.rotate(mid);
 
     const flip = mid > Math.PI/2 && mid < 3*Math.PI/2;
-    if (flip) { ctx.rotate(Math.PI); }
+    if (flip) ctx.rotate(Math.PI);
 
     ctx.font = font;
     ctx.fillStyle = "#091024";
@@ -495,7 +496,7 @@ function draw(a){
     ctx.fill();
   }
 
-  // centro con glow
+  // centro glow
   const rCenter =
     cssW<=360 ? Math.max(26,r*.085) :
     cssW<=420 ? Math.max(30,r*.095) :
@@ -513,9 +514,6 @@ function draw(a){
   ctx.lineWidth=Math.max(2,rCenter*.08);
   ctx.stroke();
 }
-
-// idle
-(function glow(){ draw(angle); requestAnimationFrame(glow); })();
 
 /* Ganador exacto por sector */
 function normAngle(rad){ const T = Math.PI * 2; return ((rad % T) + T) % T; }
@@ -692,6 +690,12 @@ function init(){
   tickCountdown();
   setInterval(tickCountdown,1000);
   scheduleMidnightReset();
+
+  // animación continua de la ruleta (solo dibuja, no gira)
+  (function glow(){
+    draw(angle);
+    requestAnimationFrame(glow);
+  })();
 }
 init();
 </script>
